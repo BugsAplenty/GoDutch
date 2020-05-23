@@ -1,27 +1,41 @@
 from databases import *
-import telebot
-import time
-from telebot import types
-
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+import logging
 bot_token = '1260422753:AAGk_W_MfVoCD-HqTp54cAqTGay34Ll4gs8'
 
-bot = telebot.TeleBot(token=bot_token)
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    level=logging.INFO)
+
+logger = logging.getLogger(__name__)
 
 
-@bot.message_handler(func=lambda message: message.text == "hi")
-def command_text_hi(m):
-    bot.send_message(m.chat.id, "hi yourself")
+def start(update, context):
+    update.message.reply_text('Hi!')
+    user = update.message.from_user
+    users.append_row([user['username'], user['id']])
+
+def help(update, context):
+    update.message.reply_text('Help!')
 
 
-@bot.message_handler(func=lambda message: message.text == "what's my favorite food?")
-def command_text_favorite_food(m):
-    favorite_food = sh.sheet1.cell(2, 1).value
-    bot.send_message(m.chat.id, "your favorite food is " + favorite_food)
+def echo(update, context):
+    update.message.reply_text(update.message.text)
+
+
+def error(update, context):
+    logger.warning('Update "%s" caused error "%s"', update, context.error)
+
+
+def main():
+    updater = Updater(bot_token, use_context=True)
+    dp = updater.dispatcher
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("help", help))
+    dp.add_handler(MessageHandler(Filters.text, echo))
+    dp.add_error_handler(error)
+    updater.start_polling()
+    updater.idle()
 
 
 if __name__ == '__main__':
-    while True:
-        try:
-            bot.polling()
-        except Exception:
-            time.sleep(15)
+    main()
