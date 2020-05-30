@@ -1,18 +1,21 @@
-from databases import *
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import logging
-bot_token = '1260422753:AAGk_W_MfVoCD-HqTp54cAqTGay34Ll4gs8'
+from gerkules_mongodb import GerkulesMongodb, GerkulesFood
 
+bot_token = '1260422753:AAGk_W_MfVoCD-HqTp54cAqTGay34Ll4gs8'
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
-
 logger = logging.getLogger(__name__)
+gerkules_database = GerkulesMongodb()
 
 
 def start(update, context):
-    update.message.reply_text('Hi!')
+    global gerkules_database
+    update.message.reply_text('Привет!')
     user = update.message.from_user
-    users.append_row([user['username'], user['id']])
+    gerkules_database.add_user(user)
+    logger.info(f"Started conversation with ***REMOVED***user.username***REMOVED***")
+
 
 def help(update, context):
     update.message.reply_text('Help!')
