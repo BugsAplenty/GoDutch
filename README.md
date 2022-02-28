@@ -1,2 +1,2 @@
-# Gerkules
-Telegram nutrition assistant bot.
+# GoDutch
+Budgetter for personal and group use.
