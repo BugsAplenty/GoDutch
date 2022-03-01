@@ -1,10 +1,11 @@
-#!/usr/bin/python3
-from pyrogram import Client
-from databases.user_database import gerkules_user_db
+import json
+from GoDutch import GoDutch
 
-app = Client("gerkules", config_file="gerkules.ini")
+config_file = open('config.json')
+config = json.load(config_file)
+token = config['token']
 
-# App launch
-if __name__ == "__main__":
-    gerkules_user_db.run()
-    app.run()
+go_dutch_instance = GoDutch(token)
+
+if __name__ == '__main__':
+    go_dutch_instance.run()
