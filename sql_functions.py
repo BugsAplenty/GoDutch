@@ -3,7 +3,9 @@ from mysql.connector import Error
 import pandas as pd
 
 
-def create_server_connection(host_name: str, user_name: str, user_password: str):
+def create_server_connection(host_name, user_name, user_password):
+    import mysql.connector
+    from mysql.connector import Error
     connection = None  # drops previous connection
     try:
         connection = mysql.connector.connect(
