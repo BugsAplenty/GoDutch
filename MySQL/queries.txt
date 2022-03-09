@@ -1,0 +1,9 @@
+create_database
+"
+CREATE DATABASE school;
+"
+
+place_holder_query
+"
+asasdasd
+"
