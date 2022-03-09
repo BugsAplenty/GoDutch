@@ -11,7 +11,7 @@ def create_db_connection(host_name, user_name, user_password, db_name):
             passwd=user_password,
             database=db_name
         )
-        print("MySQL Database connection successful")
+        print(f"MySQL Database connection successful - {db_name}")
     except Error as err:
         print(f"Error: '{err}'")
 
@@ -28,7 +28,7 @@ def create_server_connection(host_name, user_name, user_password):
             user=user_name,
             password=user_password
         )
-        print("MySql Database connection successful.")
+        print(f"MySql Database connection successful - {host_name}")
     except Error as e:
         print(f"Error: {e}")
 
@@ -44,12 +44,12 @@ def create_database(connection, query):
         print(f"Error: {e}")
 
 
-def execute_query(connection, query):
+def execute_query(connection, query, query_name="unnamed"):
     cursor = connection.cursor()
     try:
         cursor.execute(query)
-        connection.commit()  # makes sure query is impemented
-        print("Query successful")
+        connection.commit()
+        print(f"Query successful - {query_name}")
     except Error as e:
         print(f"Error: {e}")
 
