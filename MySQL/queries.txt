@@ -1,9 +1,53 @@
-create_database
-"
-CREATE DATABASE school;
-"
+@create_database
+CREATE DATABASE telegrambot;
 
-place_holder_query
-"
-asasdasd
-"
+
+@create_user_table
+CREATE TABLE users (
+    id INT NOT NULL AUTO_INCREMENT,
+    fullname VARCHAR(40) NOT NULL,
+    date_created DATE NOT NULL,
+    unique_identifier VARCHAR(40) NOT NULL UNIQUE,
+    PRIMARY KEY (id)
+);
+
+
+@create_transactions_table
+CREATE TABLE transactions(
+    id INT NOT NULL AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    transaction_amount int NOT NULL,
+    transaction_date DATETIME NOT NULL,
+    PRIMARY KEY (id),
+    FOREIGN KEY (user_id) REFERENCES users (id)
+);
+
+
+@drop_database
+DROP DATABASE telegrambot;
+
+
+@populate_sample_data_users
+INSERT INTO users
+    (fullname, date_created, unique_identifier)
+VALUES
+    ("Jimmy Jones", "2017-06-15", "test1"),
+    ("Jimmy Jones", "2018-01-13", "test2"),
+    ("Bob Bob", "2020-11-11", "test3"),
+    ("No Transactions", "2000-01-01", "test4");
+
+
+@populate_sample_data_transactions
+INSERT INTO transactions
+    (user_id, transaction_amount, transaction_date)
+VALUES
+    (1, 30, "2017-06-15 22:59:59"),
+    (1, 30, "2011-03-15 10:00:00"),
+    (3, 100.4, "2011-03-15 10:00:00");
+
+
+@check_unique_identifier
+SELECT users.fullname FROM users
+WHERE unique_identifier = 'test1';
+
+
