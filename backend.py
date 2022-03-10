@@ -1,4 +1,5 @@
 from sql_functions import *
+from datetime import datetime
 
 
 def read_queries_file(path="./MySQL/queries.txt"):
@@ -23,6 +24,7 @@ def index_queries(queries):
 
 def merge_queries(queries):
     query_list = []
+    query, query_name = "", ""
     for elem in queries:
         if elem[0] == "@":
             query = ""
@@ -35,21 +37,43 @@ def merge_queries(queries):
     return query_list
 
 
+def validate_query_file_integrity(path="./MySQL/queries.txt"):
+    pass
+    # print("Validating query file integrity.")
+    # expecting = "@"
+    # try:
+    #     f = open(path, "r", encoding='utf-8')
+    #     for line in f.readline():
+    #         line = line.strip()
+    #         if not line:
+    #             pass
+    #         if line[0] == expecting:
+    #             expecting = ";"
+    #         if ";" in line:
+    #             expecting = "@"
+    #         elif "@" in line:
+    #             print(f"Queries file invalid - {line}")
+    # except Exception as e:
+    #     print(e)
+    # finally:
+    #     f.close()
+
+
 def create_query_dictionary():
+    validate_query_file_integrity()
+
     queries_raw = read_queries_file()
     queries_combined = merge_queries(queries_raw)
     queries = index_queries(queries_combined)
     return queries
 
 
-def check_query_file_validity():
-    pass
-
-
 def create_default_database(q, populate=False):
-    connection = create_server_connection("localhost", "root", "1z2w3c4r")
+    """creates database with tables, if populate is True then sample data will be added"""
+
+    connection = create_server_connection("localhost", "root", "password")
     execute_query(connection, q["create_database"], "create_database")
-    connection = create_db_connection("localhost", "root", "1z2w3c4r", "telegrambot")
+    connection = create_db_connection("localhost", "root", "password", "telegrambot")
     execute_query(connection, q["create_user_table"], "create_user_table")
     execute_query(connection, q["create_transactions_table"], "create_transactions_table")
     if populate:
@@ -58,12 +82,13 @@ def create_default_database(q, populate=False):
 
 
 def drop_database(q):
-    connection = create_server_connection("localhost", "root", "1z2w3c4r")
+    connection = create_server_connection("localhost", "root", "password")
     execute_query(connection, q["drop_database"], "drop_database")
 
 
 def user_exists(unique):
-    connection = create_db_connection("localhost", "root", "1z2w3c4r", 'telegrambot')
+    print("Checking if user exists.")
+    connection = create_db_connection("localhost", "root", "password", 'telegrambot')
     query = f"SELECT users.fullname FROM users WHERE unique_identifier = '{unique}';"
     result = read_query(connection, query)
     if result:
@@ -72,50 +97,82 @@ def user_exists(unique):
     return False
 
 
-def add_user_unique_identifier(fullname, date, unique):
-    print("Checking if user already exists.")
+def print_user_doesnt_exist():
+    print(f"User doesn't exist.")
+
+
+def add_user_unique_identifier(q, fullname, date, unique):
     if user_exists(unique):
         print(f"User {fullname} already exists! - unique identifier: {unique}")
         return
 
-    connection = create_db_connection("localhost", "root", "1z2w3c4r", 'telegrambot')
-    query = f"INSERT INTO users (fullname, date_created, unique_identifier) VALUES ('{fullname}', '{date}', '{unique}');"
+    connection = create_db_connection("localhost", "root", "password", 'telegrambot')
+    query = q["add_user"].format(fullname=fullname, date=date, unique=unique)
     execute_query(connection, query, "add_new_user")
     print(f"User {fullname} was added!")
 
 
-def get_user_transactions(unique):
-    print("Checking if user exists.")
+def get_user_transactions(q, unique):
     if not user_exists(unique):
-        print(f"User doesn't exist.")
+        print_user_doesnt_exist()
         return
 
-    connection = create_db_connection("localhost", "root", "1z2w3c4r", 'telegrambot')
-    query = f"""
-            SELECT users.unique_identifier, transactions.transaction_amount, transactions.transaction_date FROM transactions
-            JOIN users ON users.id = transactions.user_id
-            HAVING users.unique_identifier = '{unique}'
-            ;
+    connection = create_db_connection("localhost", "root", "password", 'telegrambot')
+    query = q["get_users_transactions"].format(unique=unique)
+    results = read_query(connection, query)
+    return results
+
+
+def get_user_sum(q, unique):
+    """returns a decimal number"""
+
+    if not user_exists(unique):
+        print_user_doesnt_exist()
+        return
+
+    print("Getting the sum of all user's transactions")
+    connection = create_db_connection("localhost", "root", "password", 'telegrambot')
+    query = q["get_user_sum"].format(unique=unique)
+    results = read_query(connection, query)
+    return results[0][0]
+
+
+def get_user_transactions_month(q, unique, date="this_month"):
+    """gets a user's transaction starting certain month
+       takes time in format 'YYYY-MM-DD hh:mm:ss'
+       default behavior: returns this month's transactions
     """
 
-    results = read_query(connection, query)
-    return results
-
-
-def get_user_sum(unique):
-    print("Checking if user exists.")
     if not user_exists(unique):
-        print(f"User doesn't exist.")
+        print_user_doesnt_exist()
         return
 
-    connection = create_db_connection("localhost", "root", "1z2w3c4r", 'telegrambot')
-    query = f"""
-                SELECT users.unique_identifier, SUM(transactions.transaction_amount) FROM transactions
-                JOIN users ON users.id = transactions.user_id
-                GROUP BY users.unique_identifier
-                HAVING users.unique_identifier = '{unique}'
-                ;
-            """
+    if date == "this_month":
+        now = datetime.now()
+        date = now.strftime("%Y-%m-1 00:00:00")
 
+    connection = create_db_connection("localhost", "root", "password", 'telegrambot')
+    query = q["get_users_transactions_date"].format(unique=unique, date=date)
     results = read_query(connection, query)
     return results
+
+
+def get_user_transactions_sum_month(q, unique, date="this_month"):
+    """gets a user's sum of transaction starting certain month
+       takes time in format 'YYYY-MM-DD hh:mm:ss'
+       default behavior: returns this month's sum of transactions
+    """
+
+    if not user_exists(unique):
+        print_user_doesnt_exist()
+        return
+
+    if date == "this_month":
+        now = datetime.now()
+        date = now.strftime("%Y-%m-1 00:00:00")
+
+    connection = create_db_connection("localhost", "root", "password", 'telegrambot')
+    query = q["get_users_transactions_sum_date"].format(unique=unique, date=date)
+    results = read_query(connection, query)
+    return results[0][0]
+
