@@ -83,3 +83,10 @@ JOIN users ON users.id = transactions.user_id
 GROUP BY users.unique_identifier
 HAVING ((users.unique_identifier = '{unique}') AND (transactions.transaction_date >'{date}'));
 
+
+@create_mock_database
+CREATE DATABASE mock_telegrambot;
+
+
+@drop_mock_database
+DROP DATABASE mock_telegrambot;
