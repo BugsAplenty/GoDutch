@@ -90,3 +90,10 @@ CREATE DATABASE mock_telegrambot;
 
 @drop_mock_database
 DROP DATABASE mock_telegrambot;
+
+@nonexistent_query
+NOT A QUERY;
+
+
+
+
