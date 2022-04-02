@@ -3,6 +3,8 @@ from mysql.connector import Error
 
 
 def create_db_connection(host_name, user_name, user_password, db_name):
+    """this is used whenever for queries"""
+
     connection = None
     try:
         connection = mysql.connector.connect(
@@ -20,6 +22,8 @@ def create_db_connection(host_name, user_name, user_password, db_name):
 
 
 def create_server_connection(host_name="localhost", user_name="root", user_password="password"):
+    """this is used when creating a new database"""
+
     import mysql.connector
     from mysql.connector import Error
     connection = None  # drops previous connection
@@ -61,6 +65,8 @@ def execute_query(connection, query, query_name="unnamed"):
 
 
 def read_query(connection, query):
+    """always returns a list of tuples"""
+
     cursor = connection.cursor()
     result = None
     try:
