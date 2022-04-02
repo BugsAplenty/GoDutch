@@ -1,7 +1,6 @@
 import datetime
 
 from GoDutchDatabase import GoDutchDatabase
-from enum import Enum
 from telegram import (
     InlineKeyboardMarkup,
     InlineKeyboardButton,

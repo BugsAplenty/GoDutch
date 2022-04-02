@@ -1,6 +1,7 @@
 import mysql.connector
 import logging
 
+# TODO: Replace print calls with something more
 class GoDutchDatabase:
     def __init__(self, config: dict):
         self.connection = None
