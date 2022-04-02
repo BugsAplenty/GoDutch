@@ -91,9 +91,15 @@ CREATE DATABASE mock_telegrambot;
 @drop_mock_database
 DROP DATABASE mock_telegrambot;
 
+
 @nonexistent_query
-NOT A QUERY;
+NOT A QUERY FOR TESTING;
 
 
+@add_transaction
+INSERT INTO transactions (user_id, transaction_amount, transaction_date) VALUES ('{user_id}', '{amount}', '{date}');
 
 
+@get_id_by_unique_identifier
+SELECT id from users
+WHERE users.unique_identifier = '{unique}';

@@ -39,24 +39,6 @@ def merge_queries(queries):
 
 def validate_query_file_integrity(path="./MySQL/queries.txt"):
     pass
-    # print("Validating query file integrity.")
-    # expecting = "@"
-    # try:
-    #     f = open(path, "r", encoding='utf-8')
-    #     for line in f.readline():
-    #         line = line.strip()
-    #         if not line:
-    #             pass
-    #         if line[0] == expecting:
-    #             expecting = ";"
-    #         if ";" in line:
-    #             expecting = "@"
-    #         elif "@" in line:
-    #             print(f"Queries file invalid - {line}")
-    # except Exception as e:
-    #     print(e)
-    # finally:
-    #     f.close()
 
 
 def create_query_dictionary():
@@ -96,15 +78,28 @@ def user_exists(connection, unique):
     return False
 
 
+def get_dic_and_db_connection():
+    q = create_query_dictionary()
+    connection = create_db_connection("localhost", "root", "password", "telegrambot")
+    return connection, q
+
+
 def print_user_doesnt_exist():
     print(f"User doesn't exist.")
 
 
-def add_user_unique_identifier(connection, q, fullname, date, unique):
+def get_today_date():
+    now = datetime.now()
+    date = now.strftime("%Y-%m-%d")
+    return date
+
+
+def add_user_unique_identifier(connection, q, fullname, unique):
     if user_exists(connection, unique):
         print(f"User {fullname} already exists! - unique identifier: {unique}")
         return None
 
+    date = get_today_date()
     query = q["add_user"].format(fullname=fullname, date=date, unique=unique)
     success = execute_query(connection, query, "add_new_user")
     if success == 1:
@@ -172,4 +167,27 @@ def get_user_transactions_sum_month(connection, q, unique, date="this_month"):
     query = q["get_users_transactions_sum_date"].format(unique=unique, date=date)
     results = read_query(connection, query)
     return results[0][0]
+
+
+def add_transaction(connection, q, unique, fullname, amount):
+    if not user_exists(connection, unique):
+        print_user_doesnt_exist()
+        print("Creating user.")
+        add_user_unique_identifier(connection, q, fullname, unique)
+        return None
+
+    print("Adding transaction.")
+
+    now = datetime.now()
+    timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
+
+    query = q["get_id_by_unique_identifier"].format(unique=unique)
+    user_id = read_query(connection, query)[0][0]
+
+    query = q["add_transaction"].format(user_id=user_id, amount=amount, date=timestamp)
+    success = execute_query(connection, query, "add_transaction")
+    if success == 1:
+        print(f"Transaction for {fullname} at {amount} was added!")
+        return 1
+    return -1
 
