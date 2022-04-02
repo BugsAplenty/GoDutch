@@ -15,7 +15,7 @@ def read_queries_file(path="./MySQL/queries.txt"):
 
 def index_queries(queries):
     print("Indexing queries")
-    queries_dictionary = { }
+    queries_dictionary = {}
     for elem in queries:
         queries_dictionary[elem[0]] = elem[1]
 
@@ -172,4 +172,3 @@ def get_user_transactions_sum_month(connection, q, unique, date="this_month"):
     query = q["get_users_transactions_sum_date"].format(unique=unique, date=date)
     results = read_query(connection, query)
     return results[0][0]
-
