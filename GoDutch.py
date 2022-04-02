@@ -1,3 +1,5 @@
+import datetime
+
 from GoDutchDatabase import GoDutchDatabase
 from enum import Enum
 from telegram import (
@@ -10,63 +12,79 @@ from telegram.ext import (
     CommandHandler,
     CallbackQueryHandler,
     MessageHandler,
-    Filters
+    Filters,
+    CallbackContext
 )
+import json
 
-class ButtonOptions(Enum):
-    GET_TOTAL = 1
-    GET_ANALYTICS = 2
 
 class GoDutch:
-    def __init__(self, token):
+    def __init__(self):
+        config_file = open('config.json')
+        config = json.load(config_file)
+
+        self.token = config['token']
+        self.db = GoDutchDatabase(config)
+
         self.dispatcher = None
         self.updater = None
         self.last_update = None
-        self.token = token
-        self.db = GoDutchDatabase()
 
-        self.keyboard = [
-            InlineKeyboardButton("Get total for the month", callback_data=ButtonOptions.GET_TOTAL)
-        ]
+        self.keyboard = [[
+            InlineKeyboardButton("Get total for the month", callback_data='get_total')
+        ]]
         self.reply_markup = InlineKeyboardMarkup(self.keyboard)
 
-    def expense_total_str(self):
-        expense_total_str = ""
-        for usr in self.db.users:
-            expense_total_str += f"{usr} - {self.db.get_monthly_total(usr, self.last_update.message.date.month)}"
-        return expense_total_str
+    def transaction_total_str(self):
+        transaction_total_str = ""
+        for usr in self.db.get_users():
+            now = datetime.datetime.now()  # TODO: Crappy. Can't get time from callback query so I have to rely on system time.
+            current_year = now.year
+            current_month = now.month
+            transaction_total_str += f"{usr} - {self.db.get_user_monthly_total(usr, current_month, current_year)}"
+        return transaction_total_str
 
-    def start(self, update: Update):
+    def start(self, update: Update, context: CallbackContext):
         self.last_update = update
         update.message.reply_text('Hi there! What would you like to add?')
 
-    def help_command(self, update: Update):
+    def help_command(self, update: Update, context: CallbackContext):
         self.last_update = update
         update.message.reply_text(
-            'To add new expenses, just write them down in the following format: <expense> - <amount>.',
+            'To add new transactions, just write them down in the following format: <transaction> - <amount>.',
             reply_markup=self.reply_markup
         )
 
-    def button(self, update: Update):
+    def button(self, update: Update, context: CallbackContext):
         self.last_update = update
         query = update.callback_query
         query.answer()
-        if query.data == ButtonOptions.GET_TOTAL:
-            query.message.reply_text("Here's your total for the month: \n" + self.expense_total_str())
+        if query.data == 'get_total':
+            query.message.reply_text("Here's your total for the month: \n" + self.transaction_total_str())
 
-    def handle_text(self, update: Update):
+    def handle_text(self, update: Update, context: CallbackContext):
         self.last_update = update
         try:
-            expense_name, expense_amount = update.message.text.split(' - ')
+            transaction_name, transaction_amount = update.message.text.split('-')
         except ValueError:
             update.message.reply_text(
-                "Invalid text input. Please adhere to the format (<expense> - <amount>).",
+                "Invalid text input. Please adhere to the format (<transaction> - <amount>).",
                 reply_markup=self.reply_markup
             )
             return
         try:
-            expense_amount = float(expense_amount)
-            self.db.append_expense(update.message.from_user.username, expense_name, expense_amount, self.last_update)
+            transaction_amount = float(transaction_amount)
+            self.db.add_transaction(
+                user_id=update.message.from_user.id,
+                transaction_name=transaction_name,
+                transaction_amount=transaction_amount,
+                transaction_date=self.last_update.message.date
+            )
+            update.message.reply_text(
+                "Transaction added. Add another or choose one of the menu items below:",
+                reply_markup=self.reply_markup
+            )
+
         except ValueError:
             update.message.reply_text(
                 "Invalid text input. Please make sure you write a number left of the colon.",
@@ -85,5 +103,3 @@ class GoDutch:
 
         self.updater.start_polling()
         self.updater.idle()
-
-
