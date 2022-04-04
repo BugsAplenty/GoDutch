@@ -1,7 +1,7 @@
 import mysql.connector
 import logging
-
-# TODO: Replace print calls with something more
+# TODO: Replace query strings with stored procedures.
+# TODO: Replace print calls with something more professional-looking.
 class GoDutchDatabase:
     def __init__(self, config: dict):
         self.connection = None
@@ -97,6 +97,7 @@ class GoDutchDatabase:
         CREATE TABLE bot_users (
             id INT NOT NULL AUTO_INCREMENT,
             user_id INT NOT NULL UNIQUE,
+            username VARCHAR(40) NOT NULL,
             date_added DATE NOT NULL,
             PRIMARY KEY (id)
         )
@@ -105,7 +106,7 @@ class GoDutchDatabase:
         cursor.execute(query)
         print("Table 'bot_users' created.")
 
-    def get_users(self):
+    def get_user_ids(self):
         query = "SELECT user_id FROM bot_users"
         cursor = self.connection.cursor()
         cursor.execute(query)
@@ -144,3 +145,9 @@ class GoDutchDatabase:
         cursor = self.connection.cursor()
         cursor.execute(query, (user_id, transaction_amount, transaction_name, transaction_date))
         self.connection.commit()
+
+    def get_usernames(self):
+        query = "SELECT user_id FROM bot_users"
+        cursor = self.connection.cursor()
+        cursor.execute(query)
+        return cursor.fetchall()
