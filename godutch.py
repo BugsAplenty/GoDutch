@@ -1,7 +1,6 @@
 # TODO: Get rid of the almost useless classes for the database and telegram functions.
 import datetime
 
-from GoDutchDatabase import GoDutchDatabase
 from telegram import (
     InlineKeyboardMarkup,
     InlineKeyboardButton,
@@ -16,6 +15,9 @@ from telegram.ext import (
     CallbackContext
 )
 import json
+
+def run(config, whitelist):
+    pass
 
 
 class GoDutch:
@@ -66,12 +68,12 @@ class GoDutch:
         transaction_name, transaction_amount = self.parse_transaction_input(update)
         self.process_transaction(update, transaction_name, transaction_amount)
 
-    def run(self) -> None:
+    def run(self, config, whitelist: list) -> None:
         self.updater = Updater(self.token)
         self.dispatcher = self.updater.dispatcher
 
-        self.updater.dispatcher.add_handler(CommandHandler('start', self.start))
-        self.updater.dispatcher.add_handler(CallbackQueryHandler(self.button))
+        self.updater.dispatcher.add_handler(CommandHandler('start', self.start, Filters.user(user_id=whitelist)))
+        self.updater.dispatcher.add_handler(CallbackQueryHandler(self.button, Filters.user(user_id=whitelist)))
         self.updater.dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, self.handle_text))
         self.updater.dispatcher.add_handler(CommandHandler('help', self.help_command))
 

@@ -1,6 +1,9 @@
-from GoDutch import GoDutch
-
-go_dutch_instance = GoDutch()
+import utils
+from godutch_db import connect_db
+from godutch import run
+from utils import *
 
 if __name__ == '__main__':
-    go_dutch_instance.run()
+    config, db_config, whitelist = utils.load_config()
+    connect_db(db_config)
+    run
