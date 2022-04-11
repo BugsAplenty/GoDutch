@@ -1,3 +1,5 @@
+import datetime
+
 import mysql.connector
 
 
@@ -29,7 +31,8 @@ def get_all_usernames(connection: mysql.connector.MySQLConnection):
 
 def get_user_monthly_total(connection: mysql.connector.MySQLConnection, user_id: int, month: int, year: int):
     cursor = connection.cursor()
-    cursor.callproc("get_user_monthly_total", [user_id, month, year])
+    date = datetime.datetime(year, month, 1)
+    cursor.callproc("get_user_monthly_total", [user_id, date])
     for result in cursor.stored_results():
         return result.fetchall()
 
