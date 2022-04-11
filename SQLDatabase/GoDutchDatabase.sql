@@ -116,6 +116,16 @@ BEGIN
     WHERE `user_id` = @query_user_id
 END;
 
+CREATE PROCEDURE get_all_user_ids
+BEGIN
+    SELECT `user_id` FROM `users`
+END;
+
+CREATE PROCEDURE get_all_usernames
+BEGIN
+    SELECT `username` FROM `users`
+END;
+
 DELIMITER //
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;

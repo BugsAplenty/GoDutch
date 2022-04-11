@@ -14,99 +14,101 @@ from telegram.ext import (
     Filters,
     CallbackContext
 )
-import json
+from godutch_db import *
+from utils import *
 
-def run(config, whitelist):
-    pass
+# Setup variables:
+keyboard = [[
+    InlineKeyboardButton("Get total for the month", callback_data='get_total_this_month')
+]]
+reply_markup = InlineKeyboardMarkup(keyboard)
+
+config, db_config, whitelist = load_config()
+connection = connect_db(db_config)
 
 
-class GoDutch:
-    def __init__(self):
-        config_file = open('config.json')
-        config = json.load(config_file)
+def get_all_totals_str(month, year):
+    transaction_total_str = ""
+    for user_id, username in get_all_user_ids(connection), get_all_usernames(connection):
+        user_monthly_total = get_user_monthly_total(connection, user_id, month, year)
+        transaction_total_str += f"{username} - {user_monthly_total}\n"
+    return transaction_total_str
 
-        self.token = config['token']
-        self.db = GoDutchDatabase(config)
 
-        self.dispatcher = None
-        self.updater = None
+def start(update: Update, context: CallbackContext):
+    update.message.reply_text('Hi there! What would you like to add?')
 
-        self.keyboard = [[
-            InlineKeyboardButton("Get total for the month", callback_data='get_total_this_month')
-        ]]
-        self.reply_markup = InlineKeyboardMarkup(self.keyboard)
 
-    def get_all_totals_str(self, month, year):
-        transaction_total_str = ""
-        for user_id, username in self.db.get_user_ids(), self.db.get_usernames():
-            now = datetime.datetime.now()
-            user_monthly_total = self.db.get_user_monthly_total(user_id, month, year)
-            transaction_total_str += f"{username} - {user_monthly_total}\n"
-        return transaction_total_str
+def help_command(update: Update, context: CallbackContext):
+    update.message.reply_text(
+        'To add new transactions, just write them down in the following format: <transaction> - <amount>.',
+        reply_markup=reply_markup
+    )
 
-    def start(self, update: Update, context: CallbackContext):
-        update.message.reply_text('Hi there! What would you like to add?')
 
-    def help_command(self, update: Update, context: CallbackContext):
-        update.message.reply_text(
-            'To add new transactions, just write them down in the following format: <transaction> - <amount>.',
-            reply_markup=self.reply_markup
+def button(update: Update, context: CallbackContext):
+    query = update.callback_query
+    query.answer()
+    if query.data == 'get_total_this_month':
+        now = datetime.datetime.now()  # TODO: Crappy. Can't get time from callback query so I have to rely on system time.
+        query.message.reply_text(
+            "Here's your total for the month: \n" + get_all_totals_str(now.month, now.year)
         )
+    elif query.data == 'get_total_other_month':
+        raise NotImplementedError
 
-    def button(self, update: Update, context: CallbackContext):
-        query = update.callback_query
-        query.answer()
-        if query.data == 'get_total_this_month':
-            now = datetime.datetime.now()  # TODO: Crappy. Can't get time from callback query so I have to rely on system time.
-            query.message.reply_text(
-                "Here's your total for the month: \n" + self.get_all_totals_str(now.month, now.year)
-            )
-        elif query.data == 'get_total_other_month':
-            raise NotImplementedError
 
-    def handle_text(self, update: Update, context: CallbackContext):
-        transaction_name, transaction_amount = self.parse_transaction_input(update)
-        self.process_transaction(update, transaction_name, transaction_amount)
+def handle_text(update: Update, context: CallbackContext):
+    transaction_name, transaction_amount = parse_transaction_input(update)
+    process_transaction(update, transaction_name, transaction_amount)
 
-    def run(self, config, whitelist: list) -> None:
-        self.updater = Updater(self.token)
-        self.dispatcher = self.updater.dispatcher
 
-        self.updater.dispatcher.add_handler(CommandHandler('start', self.start, Filters.user(user_id=whitelist)))
-        self.updater.dispatcher.add_handler(CallbackQueryHandler(self.button, Filters.user(user_id=whitelist)))
-        self.updater.dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, self.handle_text))
-        self.updater.dispatcher.add_handler(CommandHandler('help', self.help_command))
+def main() -> None:
+    updater = Updater(config["token"])
+    dispatcher = updater.dispatcher
 
-        self.updater.start_polling()
-        self.updater.idle()
+    dispatcher.add_handler(CommandHandler('start', start, Filters.user(user_id=whitelist)))
+    dispatcher.add_handler(CallbackQueryHandler(button, Filters.user(user_id=whitelist)))
+    dispatcher.add_handler(
+        MessageHandler(Filters.text & ~Filters.command & Filters.user(user_id=whitelist), handle_text))
+    dispatcher.add_handler(CommandHandler('help', help_command))
+    updater.start_polling()
+    updater.idle()
 
-    def parse_transaction_input(self, update):
-        try:
-            transaction_name, transaction_amount = update.message.text.split('-')
-            return transaction_name, transaction_amount
-        except ValueError:
-            update.message.reply_text(
-                "Invalid text input. Please adhere to the format (<transaction> - <amount>).",
-                reply_markup=self.reply_markup
-            )
-            return
 
-    def process_transaction(self, update, transaction_name, transaction_amount):
-        try:
-            transaction_amount = float(transaction_amount)
-            self.db.add_transaction(
-                user_id=update.message.from_user.id,
-                transaction_name=transaction_name,
-                transaction_amount=transaction_amount,
-                transaction_date=update.message.date
-            )
-            update.message.reply_text(
-                "Transaction added. Add another or choose one of the menu items below:",
-                reply_markup=self.reply_markup
-            )
-        except ValueError:
-            update.message.reply_text(
-                "Invalid text input. Please make sure you write a number left of the colon.",
-                reply_markup=self.reply_markup
-            )
-            return
+def parse_transaction_input(update):
+    try:
+        transaction_name, transaction_amount = update.message.text.split('-')
+        return transaction_name, transaction_amount
+    except ValueError:
+        update.message.reply_text(
+            "Invalid text input. Please adhere to the format (<transaction> - <amount>).",
+            reply_markup=reply_markup
+        )
+        return
+
+
+def process_transaction(update, transaction_name, transaction_amount):
+    try:
+        transaction_amount = float(transaction_amount)
+        add_transaction(
+            connection,
+            user_id=update.message.from_user.id,
+            transaction_name=transaction_name,
+            transaction_amount=transaction_amount,
+            transaction_date=update.message.date
+        )
+        update.message.reply_text(
+            "Transaction added. Add another or choose one of the menu items below:",
+            reply_markup=reply_markup
+        )
+    except ValueError:
+        update.message.reply_text(
+            "Invalid text input. Please make sure you write a number left of the colon.",
+            reply_markup=reply_markup
+        )
+        return
+
+
+if __name__ == '__main__':
+    main()
