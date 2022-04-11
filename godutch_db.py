@@ -13,6 +13,20 @@ def connect_db(db_config):
     return connection
 
 
+def get_all_user_ids(connection: mysql.connector.MySQLConnection):
+    cursor = connection.cursor()
+    cursor.callproc("get_all_user_ids")
+    for result in cursor.stored_results():
+        return result.fetchall()
+
+
+def get_all_usernames(connection: mysql.connector.MySQLConnection):
+    cursor = connection.cursor()
+    cursor.callproc("get_all_usernames")
+    for result in cursor.stored_results():
+        return result.fetchall()
+
+
 def get_user_monthly_total(connection: mysql.connector.MySQLConnection, user_id: int, month: int, year: int):
     cursor = connection.cursor()
     cursor.callproc("get_user_monthly_total", [user_id, month, year])
