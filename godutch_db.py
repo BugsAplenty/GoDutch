@@ -2,7 +2,7 @@ import mysql.connector
 
 
 def connect_db(db_config):
-    print(f"Connecting to database '{self.db_name}'...")
+    print(f"Connecting to database '{db_config['db_name']}'...")
     connection = mysql.connector.connect(
         host=db_config['host_name'],
         user=db_config['db_usr'],
@@ -34,25 +34,27 @@ def user_exists(connection: mysql.connector.MySQLConnection, user_id: int):
         return result.fetchall()
 
 
-def add_user(self, user_id, date_added):
-    query = "INSERT INTO bot_users (user_id, date_added) VALUES (%s, %s)"
-    if not self.user_exists(user_id):
-        cursor = self.connection.cursor()
-        cursor.execute(query, (user_id, date_added))
-        self.connection.commit()
+def add_user(connection: mysql.connector.MySQLConnection, user_id, date_added):
+    if not user_exists(connection, user_id):
+        cursor = connection.cursor()
+        cursor.callproc("add_user", [user_id, date_added])
+        connection.commit()
+
+def update_username(connection: mysql.connector.MySQLConnection, user_id, username):
+    if user_exists(connection, user_id):
+        curr_username = get_username_by_id(connection, user_id)
+        if curr_username != username:
+            cursor = connection.cursor()
+            cursor.callproc("modify_username", [user_id, username])
+            connection.commit()
 
 
-def add_transaction(self, user_id, transaction_amount, transaction_name, transaction_date):
-    if not self.user_exists(user_id):
-        self.add_user(user_id, transaction_date)
-    query = """
-    INSERT INTO transactions (user_id, transaction_amount, transaction_name, transaction_date) 
-    VALUES (%s, %s, %s, %s)
-    """
-    cursor = self.connection.cursor()
-    cursor.execute(query, (user_id, transaction_amount, transaction_name, transaction_date))
-    self.connection.commit()
-
-
-def update_username(user_id: int, username: str):
-    pass
+def add_transaction(connection: mysql.connector.MySQLConnection,
+                    user_id,
+                    transaction_amount,
+                    transaction_name,
+                    transaction_date):
+    if user_exists(connection, user_id):
+        cursor = connection.cursor()
+        cursor.callproc("add_transaction", [user_id, transaction_amount, transaction_name, transaction_date])
+        connection.commit()
