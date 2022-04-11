@@ -4,6 +4,7 @@ import json
 def load_config():
     whitelist_file = open("whitelist.json")
     whitelist = json.load(whitelist_file)
+    whitelist = list(map(int, whitelist))
 
     config_file = open("config.json")
     config = json.load(config_file)

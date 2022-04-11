@@ -50,10 +50,16 @@ def button(update: Update, context: CallbackContext):
     query = update.callback_query
     query.answer()
     if query.data == 'get_total_this_month':
-        now = datetime.datetime.now()  # TODO: Crappy. Can't get time from callback query so I have to rely on system time.
-        query.message.reply_text(
-            "Here's your total for the month: \n" + get_all_totals_str(now.month, now.year)
-        )
+        user_ids = get_all_user_ids(connection)
+        if user_ids:
+            now = datetime.datetime.now()  # TODO: Crappy. Can't get time from callback query so I have to rely on system time.
+            query.message.reply_text(
+                "Here's your total for the month: \n" + get_all_totals_str(now.month, now.year)
+            )
+        else:
+            query.message.reply_text(
+                "No entries made so far. \n"
+            )
     elif query.data == 'get_total_other_month':
         raise NotImplementedError
 
@@ -66,12 +72,25 @@ def handle_text(update: Update, context: CallbackContext):
 def main() -> None:
     updater = Updater(config["token"])
     dispatcher = updater.dispatcher
-
-    dispatcher.add_handler(CommandHandler('start', start, Filters.user(user_id=whitelist)))
-    dispatcher.add_handler(CallbackQueryHandler(button, Filters.user(user_id=whitelist)))
     dispatcher.add_handler(
-        MessageHandler(Filters.text & ~Filters.command & Filters.user(user_id=whitelist), handle_text))
-    dispatcher.add_handler(CommandHandler('help', help_command))
+        CommandHandler('start',
+                       start,
+                       Filters.user(user_id=whitelist))
+    )
+
+    dispatcher.add_handler(
+        MessageHandler(
+            Filters.text & ~Filters.command & Filters.user(user_id=whitelist),
+            handle_text
+        )
+    )
+    dispatcher.add_handler(
+        CommandHandler('help',
+                       help_command,
+                       Filters.user(user_id=whitelist)
+                       )
+    )
+    dispatcher.add_handler(CallbackQueryHandler(button, Filters.user(user_id=whitelist)))
     updater.start_polling()
     updater.idle()
 
