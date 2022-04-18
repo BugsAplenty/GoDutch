@@ -29,7 +29,7 @@ connection = connect_db(db_config)
 
 def get_all_totals_str(month, year):
     transaction_total_str = ""
-    for user_id, username in get_all_user_ids(connection), get_all_usernames(connection):
+    for user_id, username in zip(get_all_user_ids(connection), get_all_usernames(connection)):
         user_monthly_total = get_user_monthly_total(connection, user_id, month, year)
         transaction_total_str += f"{username} - {user_monthly_total}\n"
     return transaction_total_str
@@ -41,7 +41,8 @@ def start(update: Update, context: CallbackContext):
 
 def help_command(update: Update, context: CallbackContext):
     update.message.reply_text(
-        'To add new transactions, just write them down in the following format: <transaction> - <amount>.',
+        'To add new transactions, just write them down in the following format: \n'
+        '<transaction> - <amount>.',
         reply_markup=reply_markup
     )
 
@@ -64,9 +65,29 @@ def button(update: Update, context: CallbackContext):
         raise NotImplementedError
 
 
-def handle_text(update: Update, context: CallbackContext):
-    transaction_name, transaction_amount = parse_transaction_input(update)
+def is_expense_input(update):
+    if update.message.text.split('-') is not None:
+        if len(update.message.text.split('-')) > 1:
+            return True
+    return False
+
+
+def handle_expense_input(update):
+    transaction_name, transaction_amount = update.message.text.split('-')
+    if not user_exists(connection, update.message.from_user.id):
+        add_user(connection, update.message.from_user.id, update.message.from_user.username, update.message.date)
     process_transaction(update, transaction_name, transaction_amount)
+
+
+def handle_text(update: Update, context: CallbackContext):
+    if is_expense_input(update):
+        handle_expense_input(update)
+    else:
+        update.message.reply_text(
+            "Invalid input. Please adhere to the format: \n"
+            "<transaction name> - <price>.",
+            reply_markup=reply_markup
+        )
 
 
 def main() -> None:
@@ -93,18 +114,6 @@ def main() -> None:
     dispatcher.add_handler(CallbackQueryHandler(button, Filters.user(user_id=whitelist)))
     updater.start_polling()
     updater.idle()
-
-
-def parse_transaction_input(update):
-    try:
-        transaction_name, transaction_amount = update.message.text.split('-')
-        return transaction_name, transaction_amount
-    except ValueError:
-        update.message.reply_text(
-            "Invalid text input. Please adhere to the format (<transaction> - <amount>).",
-            reply_markup=reply_markup
-        )
-        return
 
 
 def process_transaction(update, transaction_name, transaction_amount):

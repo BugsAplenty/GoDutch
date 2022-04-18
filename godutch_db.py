@@ -19,14 +19,14 @@ def get_all_user_ids(connection: mysql.connector.MySQLConnection):
     cursor = connection.cursor()
     cursor.callproc("get_all_user_ids")
     for result in cursor.stored_results():
-        return result.fetchall()
+        return result.fetchone()
 
 
 def get_all_usernames(connection: mysql.connector.MySQLConnection):
     cursor = connection.cursor()
     cursor.callproc("get_all_usernames")
     for result in cursor.stored_results():
-        return result.fetchall()
+        return result.fetchone()
 
 
 def get_user_monthly_total(connection: mysql.connector.MySQLConnection, user_id: int, month: int, year: int):
@@ -34,28 +34,27 @@ def get_user_monthly_total(connection: mysql.connector.MySQLConnection, user_id:
     date = datetime.datetime(year, month, 1)
     cursor.callproc("get_user_monthly_total", [user_id, date])
     for result in cursor.stored_results():
-        return result.fetchall()
+        return result.fetchone()[0]
 
 
 def get_username_by_id(connection: mysql.connector.MySQLConnection, user_id: int):
     cursor = connection.cursor()
     cursor.callproc("get_username_by_id", [user_id, ])
     for result in cursor.stored_results():
-        return result.fetchall()
+        return result.fetchone()[0]
 
 
 def user_exists(connection: mysql.connector.MySQLConnection, user_id: int):
     cursor = connection.cursor()
     cursor.callproc("user_exists", [user_id, ])
     for result in cursor.stored_results():
-        return result.fetchall()
+        return result.fetchone()[0]
 
 
-def add_user(connection: mysql.connector.MySQLConnection, user_id, date_added):
-    if not user_exists(connection, user_id):
-        cursor = connection.cursor()
-        cursor.callproc("add_user", [user_id, date_added])
-        connection.commit()
+def add_user(connection: mysql.connector.MySQLConnection, user_id, username, date_added):
+    cursor = connection.cursor()
+    cursor.callproc("add_user", [user_id, username, date_added])
+    connection.commit()
 
 def update_username(connection: mysql.connector.MySQLConnection, user_id, username):
     if user_exists(connection, user_id):
