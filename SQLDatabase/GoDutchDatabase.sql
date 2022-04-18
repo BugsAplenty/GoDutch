@@ -48,82 +48,82 @@ CREATE PROCEDURE check_database_exists(db_name VARCHAR(40))
 BEGIN
 	SELECT schema_name FROM INFORMATION_SCHEMA.SCHEMATA 
     WHERE schema_name = db_name;
-END$$
+END $$
 
 CREATE PROCEDURE get_user_monthly_total(
-	query_user_id int,
-    query_date date
+	IN p_user_id int,
+    IN p_date date
 )
 BEGIN
 	SELECT SUM(`transaction_amount`)
     FROM `transactions`
-    GROUP BY `user_id`, month(`transaction_date`) = month(@query_date) AND year(`transaction_date`) = year(@query_date);
-END$$
+    GROUP BY `user_id` = p_user_id, month(`transaction_date`) = month(p_date) AND year(`transaction_date`) = year(p_date);
+END $$
 
 CREATE PROCEDURE get_username_by_id
 (
-	query_user_id int 
+	IN p_user_id int
 )
 BEGIN
 	SELECT `username`
-    FROM `transactions`
-    WHERE `user_id` = query_user_id;
-END$$
+    FROM `bot_users`
+    WHERE `user_id` = p_user_id;
+END $$
 
 CREATE PROCEDURE user_exists
 (
-	query_user_id int
+	IN p_user_id int
 )
 BEGIN
 	SELECT 1
     FROM `bot_users`
-    WHERE `user_id` = query_user_id;
-END$$
+    WHERE `user_id` = p_user_id;
+END $$
 
 CREATE PROCEDURE add_user
     (
-		query_user_id int,
-        query_username varchar(64),
-        query_date_added date
+		IN p_user_id int,
+        IN p_username varchar(64),
+        IN p_date_added date
     )
 BEGIN
 	INSERT INTO `bot_users`(`user_id`, `username`, `date_added`)
-    VALUES (query_user_id, query_username, query_date_added);
-END$$
+    VALUES (p_user_id, p_username, p_date_added);
+END $$
 
 CREATE PROCEDURE add_transaction
 (
-	query_user_id int,
-    query_transaction_amount float,
-    query_transaction_name varchar(64),
-    query_transaction_date date
+	IN p_user_id int,
+    IN p_transaction_amount float,
+    IN p_transaction_name varchar(64),
+    IN p_transaction_date date
 )
 BEGIN
 	INSERT INTO `transactions`(`user_id`, `transaction_amount`, `transaction_name`, `transaction_date`)
-	VALUES (query_user_id, query_transaction_amount, query_transaction_name, query_transaction_date);
-END$$
+	VALUES (p_user_id, p_transaction_amount, p_transaction_name, p_transaction_date);
+END $$
 
 CREATE PROCEDURE update_username
     (
-        query_user_id int,
-        new_username varchar(64)
+        IN p_user_id int,
+        IN new_username varchar(64)
     )
 BEGIN
     UPDATE `bot_users`
     SET `username` = new_username
-    WHERE `user_id` = query_user_id;
-END$$
+    WHERE `user_id` = p_user_id;
+END $$
 
 CREATE PROCEDURE get_all_user_ids()
 BEGIN
     SELECT `user_id` FROM `bot_users`;
-END$$
+END $$
 
 
 CREATE PROCEDURE get_all_usernames()
 BEGIN
     SELECT `username` FROM `bot_users`;
-END$$
+END $$
 
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
