@@ -57,7 +57,16 @@ CREATE PROCEDURE get_user_monthly_total(
 BEGIN
 	SELECT SUM(`transaction_amount`)
     FROM `transactions`
-    GROUP BY `user_id` = p_user_id, month(`transaction_date`) = month(p_date) AND year(`transaction_date`) = year(p_date);
+    WHERE `user_id` = p_user_id AND month(`transaction_date`) = month(p_date) AND year(`transaction_date`) = year(p_date);
+END $$
+
+CREATE PROCEDURE get_all_monthly_totals(
+    IN p_date date
+)
+BEGIN
+   SELECT SUM(`transaction_amount`), `user_id`
+   FROM `transactions`
+   GROUP BY `user_id`, month(`transaction_date`) = month(p_date) AND year(`transaction_date`) = year(p_date);
 END $$
 
 CREATE PROCEDURE get_username_by_id

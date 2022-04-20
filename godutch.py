@@ -29,9 +29,10 @@ connection = connect_db(db_config)
 
 def get_all_totals_str(month, year):
     transaction_total_str = ""
-    for user_id, username in zip(get_all_user_ids(connection), get_all_usernames(connection)):
-        user_monthly_total = get_user_monthly_total(connection, user_id, month, year)
-        transaction_total_str += f"{username} - {user_monthly_total}\n"
+    all_totals = get_all_monthly_totals(connection, month, year)
+    for row in all_totals:
+        user_monthly_total, user_id = row
+        transaction_total_str += f"{get_username_by_id(connection, user_id)} - {user_monthly_total}\n"
     return transaction_total_str
 
 
@@ -67,15 +68,24 @@ def button(update: Update, context: CallbackContext):
 
 def is_expense_input(update):
     if update.message.text.split('-') is not None:
-        if len(update.message.text.split('-')) > 1:
+        if len(update.message.text.split('-')) == 2:
             return True
     return False
+
+
+def handle_new_user(update, connection: mysql.connector.MySQLConnection, user_id, username, date):
+    if not username:
+        update.message.reply_text(
+            "User must have a username in order to use the bot.",
+            reply_markup=reply_markup
+        )
+    add_user(connection, user_id, username, date)
 
 
 def handle_expense_input(update):
     transaction_name, transaction_amount = update.message.text.split('-')
     if not user_exists(connection, update.message.from_user.id):
-        add_user(connection, update.message.from_user.id, update.message.from_user.username, update.message.date)
+        handle_new_user(update, connection, update.message.from_user.id, update.message.from_user.username, update.message.date)
     process_transaction(update, transaction_name, transaction_amount)
 
 

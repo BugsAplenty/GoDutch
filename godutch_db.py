@@ -1,6 +1,7 @@
 import datetime
 
 import mysql.connector
+from typing import Tuple
 
 
 def connect_db(db_config):
@@ -15,46 +16,60 @@ def connect_db(db_config):
     return connection
 
 
-def get_all_user_ids(connection: mysql.connector.MySQLConnection):
+def get_all_user_ids(connection: mysql.connector.MySQLConnection) -> Tuple[int]:
     cursor = connection.cursor()
     cursor.callproc("get_all_user_ids")
+    user_ids = result2tuple(cursor)
+    return user_ids
+
+
+def result2tuple(cursor) -> tuple:
+    results = []
     for result in cursor.stored_results():
-        return result.fetchone()
+        results.extend(result.fetchall())
+    return tuple(result[0] for result in results)
 
 
-def get_all_usernames(connection: mysql.connector.MySQLConnection):
+def get_all_monthly_totals(connection: mysql.connector.MySQLConnection, month: int, year: int) -> list:
+    results = []
     cursor = connection.cursor()
-    cursor.callproc("get_all_usernames")
+    date = datetime.datetime(year, month, 1)
+    cursor.callproc("get_all_monthly_totals", [date, ])
     for result in cursor.stored_results():
-        return result.fetchone()
+        results.extend(result.fetchall())
+    return results
 
 
-def get_user_monthly_total(connection: mysql.connector.MySQLConnection, user_id: int, month: int, year: int):
+def get_user_monthly_total(connection: mysql.connector.MySQLConnection,
+                           user_id: int,
+                           month: int,
+                           year: int) -> (int, int):
     cursor = connection.cursor()
     date = datetime.datetime(year, month, 1)
     cursor.callproc("get_user_monthly_total", [user_id, date])
-    for result in cursor.stored_results():
-        return result.fetchone()[0]
+    totals = result2tuple(cursor)
+    return totals[0]
 
 
-def get_username_by_id(connection: mysql.connector.MySQLConnection, user_id: int):
+def get_username_by_id(connection: mysql.connector.MySQLConnection, user_id: int) -> str:
     cursor = connection.cursor()
     cursor.callproc("get_username_by_id", [user_id, ])
-    for result in cursor.stored_results():
-        return result.fetchone()[0]
+    usernames = result2tuple(cursor)
+    return usernames[0]
 
 
 def user_exists(connection: mysql.connector.MySQLConnection, user_id: int):
     cursor = connection.cursor()
     cursor.callproc("user_exists", [user_id, ])
-    for result in cursor.stored_results():
-        return result.fetchone()[0]
+    bool_user_exists = result2tuple(cursor)
+    return bool_user_exists
 
 
 def add_user(connection: mysql.connector.MySQLConnection, user_id, username, date_added):
     cursor = connection.cursor()
     cursor.callproc("add_user", [user_id, username, date_added])
     connection.commit()
+
 
 def update_username(connection: mysql.connector.MySQLConnection, user_id, username):
     if user_exists(connection, user_id):
