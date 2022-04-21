@@ -6,7 +6,7 @@ cffi                   == 1.14.6
 cryptography           == 35.0.0
 mysql-connector-python == 8.0.18
 pip                    == 21.2.2
-protobuf               == 3.6.0
+protobuf               == 3.15.0
 pycparser              == 2.21
 PySocks                == 1.7.1
 python-telegram-bot    == 13.11
