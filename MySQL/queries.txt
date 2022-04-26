@@ -1,0 +1,99 @@
+@create_database
+CREATE DATABASE telegrambot;
+
+
+@create_user_table
+CREATE TABLE users (
+    id INT NOT NULL AUTO_INCREMENT,
+    fullname VARCHAR(40) NOT NULL,
+    date_created DATE NOT NULL,
+    unique_identifier VARCHAR(40) NOT NULL UNIQUE,
+    PRIMARY KEY (id)
+);
+
+
+@create_transactions_table
+CREATE TABLE transactions(
+    id INT NOT NULL AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    transaction_amount int NOT NULL,
+    transaction_date DATETIME NOT NULL,
+    PRIMARY KEY (id),
+    FOREIGN KEY (user_id) REFERENCES users (id)
+);
+
+
+@drop_database
+DROP DATABASE telegrambot;
+
+
+@populate_sample_data_users
+INSERT INTO users
+    (id, fullname, date_created, unique_identifier)
+VALUES
+    (1, "Jimmy Jones", "2017-06-15", "test1"),
+    (2, "Jimmy Jones", "2018-01-13", "test2"),
+    (3, "Bobby Bob", "2020-11-11", "test3"),
+    (4, "No Transactions", "2000-01-01", "test4"),
+    (5, "Mr. Cool", "2022-04-02", "test5");
+
+
+@populate_sample_data_transactions
+INSERT INTO transactions
+    (user_id, transaction_amount, transaction_date)
+VALUES
+    (1, 30, "2022-03-15 22:59:59"),
+    (1, 30, "2011-03-15 10:00:00"),
+    (3, 100.4, "2011-03-15 10:00:00"),
+    (5, 100, "2011-03-15 10:00:00"),
+    (5, 50, "2011-03-15 10:00:00");
+
+
+@check_unique_identifier
+SELECT users.fullname FROM users
+WHERE unique_identifier = 'test1';
+
+
+@get_user_sum
+SELECT SUM(transactions.transaction_amount), users.unique_identifier FROM transactions
+JOIN users ON users.id = transactions.user_id
+GROUP BY users.unique_identifier
+HAVING users.unique_identifier = '{unique}';
+
+
+@get_users_transactions
+SELECT transactions.transaction_amount, transactions.transaction_date, users.unique_identifier FROM transactions
+JOIN users ON users.id = transactions.user_id
+HAVING users.unique_identifier = '{unique}';
+
+
+@add_user
+INSERT INTO users (fullname, date_created, unique_identifier) VALUES ('{fullname}', '{date}', '{unique}');
+
+
+@get_users_transactions_date
+SELECT users.unique_identifier, transactions.transaction_amount, transactions.transaction_date FROM transactions
+JOIN users ON users.id = transactions.user_id
+HAVING ((users.unique_identifier = '{unique}') AND (transactions.transaction_date >'{date}'));
+
+
+@get_users_transactions_sum_date
+SELECT SUM(transactions.transaction_amount), users.unique_identifier, transactions.transaction_date FROM transactions
+JOIN users ON users.id = transactions.user_id
+GROUP BY users.unique_identifier
+HAVING ((users.unique_identifier = '{unique}') AND (transactions.transaction_date >'{date}'));
+
+
+@create_mock_database
+CREATE DATABASE mock_telegrambot;
+
+
+@drop_mock_database
+DROP DATABASE mock_telegrambot;
+
+@nonexistent_query
+NOT A QUERY;
+
+
+
+
